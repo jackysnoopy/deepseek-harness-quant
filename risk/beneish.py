@@ -43,8 +43,9 @@ from pathlib import Path
 BASE = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(BASE))
 
-QD_DB = r"data\cache\finance_quality.db"
-FIN_DB = r"data\cache\finance.db"
+_RISK_DB = Path(__file__).resolve().parents[1] / "data" / "cache"
+QD_DB = str(_RISK_DB / "finance_quality.db")
+FIN_DB = str(_RISK_DB / "finance.db")
 OUT = BASE / "logs" / "beneish_report.json"
 
 # 阈值（需求指定）

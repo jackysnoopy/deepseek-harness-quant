@@ -30,6 +30,10 @@ from pathlib import Path
 BASE = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(BASE))
 
+# ★F5a：bars.db 绝对路径（相对路径 _P(...).as_uri() 抛 ValueError → _latest_close_of 永远 None）
+_BASE = Path(__file__).resolve().parents[1]          # deepseek-harness-quant 仓库根
+_BARS_DB = _BASE / "data" / "cache" / "bars.db"
+
 PORTFOLIO_JSON = BASE / "logs" / "portfolio.json"
 DECISIONS_JSON = BASE / "logs" / "deck_decisions.json"
 # ★2026-08-10 审计修复：主程序 08-09 起风控输出为 stock_risk_map_v2.json（5202 只全市场），v1(1767 只)已过时
@@ -58,11 +62,18 @@ def _entry_price_of(code: str, date: str):
     审批买入价自动补——持仓有 entry_price 才能算收益/盈亏/收益率"""
     try:
         import sqlite3
-        con = sqlite3.connect("file:data/cache/bars.db?mode=ro&immutable=1",
+        con = sqlite3.connect(f"file:{_BARS_DB}?mode=ro&immutable=1",
                               uri=True, timeout=3)
         row = con.execute(
             "SELECT close FROM daily_bar WHERE code=? AND date=? ORDER BY adjust DESC LIMIT 1",
             (code, date)).fetchone()
+        if not row:
+            # 审批日尚无 qfq（fill 设计：qfq 不含运行当日，当日数据次日才入库）→ 回退
+            # 到 date<= 审批日的最近可得收盘价（portfolio_pnl "回填审批日收盘价" 的务实降级）
+            row = con.execute(
+                "SELECT close FROM daily_bar WHERE code=? AND date<=? "
+                "ORDER BY date DESC LIMIT 1",
+                (code, date)).fetchone()
         con.close()
         return float(row[0]) if row and row[0] else None
     except Exception:
@@ -77,7 +88,7 @@ def _latest_close_of(code: str):
         import sqlite3
         import glob as _glob
         from pathlib import Path as _P
-        paths = ["data/cache/bars.db"]
+        paths = [str(_BARS_DB)]   # ★F5a：绝对路径（相对路径 as_uri 抛 ValueError → 永远 None）
         try:
             from data.cache import CACHE_DIR
             paths += [str(p) for p in sorted(CACHE_DIR.glob("bars_incr_*.db"))[-3:]]

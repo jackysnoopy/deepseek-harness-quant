@@ -529,6 +529,8 @@ def portfolio_pnl() -> dict:
     except Exception:
         _rt = None
     _quotes = (_rt or {}).get("quotes") if (_rt or {}).get("ok") else None
+    if isinstance(_quotes, list):   # 兼容 list 形态（防上游契约被注入层改变时再炸）
+        _quotes = {q.get("code"): q for q in _quotes if isinstance(q, dict) and q.get("code")}
     _rt_active = bool(_quotes) and (_rt or {}).get("market_open") is True
     rows, total_cost, total_val = [], 0.0, 0.0
     for p in positions:

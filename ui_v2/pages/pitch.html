@@ -210,20 +210,24 @@
   loadDataDayBar();
 
   // #290 审批动作区（V7d 状态化：未决策=买入/放弃；已决策=状态标记+撤回）
-  function actionHtml(code, name, otype) {
+  // src='opp'（机会池行）→ data-note="机会池审批X" 区分来源；缺省（卡片/指令）→ decide.js 默认 'Pitch 审批X'
+  function actionHtml(code, name, otype, src) {
     var nm = String(name || '').replace(/'/g, '');
     var ot = String(otype || '');
+    var noteAttr = function (suffix) {
+      return src === 'opp' ? ' data-note="机会池审批' + suffix + '"' : '';
+    };
     var done = LW.decide._done[code];
     if (done === 'buy') {
       return '<span class="st-done st-buy">已买入</span>' +
-        '<button class="v2-btn neg v2-btn-undo" data-code="' + code + '" data-name="' + nm + '" data-otype="' + ot + '">撤回</button>';
+        '<button class="v2-btn neg v2-btn-undo" data-code="' + code + '" data-name="' + nm + '" data-otype="' + ot + '"' + noteAttr('撤回') + '>撤回</button>';
     }
     if (done === 'drop') {
       return '<span class="st-done st-drop">已放弃</span>' +
-        '<button class="v2-btn neg v2-btn-undo" data-code="' + code + '" data-name="' + nm + '" data-otype="' + ot + '">撤回</button>';
+        '<button class="v2-btn neg v2-btn-undo" data-code="' + code + '" data-name="' + nm + '" data-otype="' + ot + '"' + noteAttr('撤回') + '>撤回</button>';
     }
-    return '<button class="v2-btn v2-btn-buy" data-code="' + code + '" data-name="' + nm + '" data-otype="' + ot + '">买入</button>' +
-      '<button class="v2-btn neg v2-btn-drop" data-code="' + code + '" data-name="' + nm + '" data-otype="' + ot + '">放弃</button>';
+    return '<button class="v2-btn v2-btn-buy" data-code="' + code + '" data-name="' + nm + '" data-otype="' + ot + '"' + noteAttr('买入') + '>买入</button>' +
+      '<button class="v2-btn neg v2-btn-drop" data-code="' + code + '" data-name="' + nm + '" data-otype="' + ot + '"' + noteAttr('放弃') + '>放弃</button>';
   }
 
   /* ── ★#310 Pitch 卡片渲染（恢复信息完整度：止损/胜率/证据/风控——数据在 API 全在，前端曾阉割） ── */
@@ -570,7 +574,8 @@
           '<span class="tag-ot">' + R._f(o.otype_name || R.otypeCN(o.otype)) + '</span>' +
           '<span class="sc" ' + scCls + '>' + (o.score != null ? o.score.toFixed(1) : '—') + '</span>' +
           '<span style="flex:1;font-size:12px;color:var(--muted)">' + (o.note || '').slice(0, 30) + '</span>' +
-          (sug ? '<b style="color:var(--gold)">建议</b>' : '') + '</div>';
+          (sug ? '<b style="color:var(--gold)">建议</b>' : '') +
+          '<span style="display:flex;gap:6px;align-items:center">' + actionHtml(o.code, o.name, o.otype_name || o.otype, 'opp') + '</span></div>';
       }).join('');
       box.innerHTML =
         '<div class="v2-card" style="margin-top:0"><h2> 机会池 <span class="tag">' + d.n + ' 只 · ' + R._f(d.date) + ' · 类型分布</span></h2>' +

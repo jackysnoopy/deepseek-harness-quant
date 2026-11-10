@@ -63,7 +63,8 @@
     return window.confirm(msg);
   }
 
-  function approve(code, action, name, otype) {
+  /* note 可选（2026-10-15 机会池行接入）：不传 = 原 'Pitch 审批X'；机会池行传 '机会池审批X' 区分来源 */
+  function approve(code, action, name, otype, note) {
     init();
     var d = LW.decide._done[code];
     if (action !== 'undo' && d) return Promise.resolve({ skipped: true });
@@ -93,7 +94,7 @@
         }
       }
     }
-    var note = action === 'buy' ? 'Pitch 审批买入' : (action === 'drop' ? 'Pitch 审批放弃' : 'Pitch 审批撤回');
+    note = note || (action === 'buy' ? 'Pitch 审批买入' : (action === 'drop' ? 'Pitch 审批放弃' : 'Pitch 审批撤回'));
     return fetch('/api/decide', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -171,7 +172,7 @@
           return;
         }
         var act = b.classList.contains('v2-btn-buy') ? 'buy' : (b.classList.contains('v2-btn-drop') ? 'drop' : 'undo');
-        approve(b.getAttribute('data-code'), act, b.getAttribute('data-name'), b.getAttribute('data-otype'));
+        approve(b.getAttribute('data-code'), act, b.getAttribute('data-name'), b.getAttribute('data-otype'), b.getAttribute('data-note') || '');
       });
     }
   };

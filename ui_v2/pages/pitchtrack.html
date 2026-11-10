@@ -63,8 +63,10 @@
 <script src="/v2/core/api.js"></script>
 <script src="/v2/components/sidebar.js"></script>
 <script src="/v2/components/icons.js"></script>
+<script src="/v2/core/render.js"></script>
 <script>
 (function () {
+  var R = LW.render;
   /* ★2026-08-16 修复：侧栏渲染调用缺失导致点进远期页菜单消失——与全站统一 */
   LW.sidebar.render('sidebar', { active: 'pitchtrack' });
   function esc(s) {

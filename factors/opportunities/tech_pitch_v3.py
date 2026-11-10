@@ -69,7 +69,10 @@ def load_recent(days: int = CONSEC_DAYS) -> pd.DataFrame:
         except Exception:
             pass
         dates = sorted(set(dates))[-days:]
-        q = "SELECT code,date,open,high,low,close,pct_chg,volume,turn,is_st FROM daily_bar WHERE date IN (%s)" % ",".join("?" * len(dates))
+        # 信号基于 qfq 收盘数据；盘中 none 快照不参与（避免同日双计）
+        q = ("SELECT code,date,open,high,low,close,pct_chg,volume,turn,is_st "
+             "FROM daily_bar WHERE adjust='qfq' AND date IN (%s)"
+             % ",".join("?" * len(dates)))
         df = pd.read_sql_query(q, con, params=dates)
         # ★#143 增量库同日数据补充（增量行覆盖主库同 key——keep=last 增量优先）
         try:
